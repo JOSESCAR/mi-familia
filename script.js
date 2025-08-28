@@ -2,6 +2,7 @@
   // ====== ERRORES VISIBLES ======
   const errBox = document.getElementById("err");
   function showError(message, source, line, col, err){
+    if (!errBox) return false;
     errBox.hidden = false;
     errBox.textContent = "[ERROR] " + message +
       (source? "\nFuente: "+source:"") +
@@ -13,11 +14,11 @@
   window.onerror = showError;
   window.addEventListener("unhandledrejection", e => showError("Promise rejection","",0,0,e.reason));
 
-  // ====== ESCALA PIXEL ======
-  let PX = 2; // declarar ANTES de usar
+  // ====== ESCALA PIXEL (debe ir ANTES de cualquier uso) ======
+  let PX = 2;                                   // <-- declarado antes de todo
   function recalcScale(){
     const base = Math.min(innerWidth, innerHeight);
-    PX = Math.max(2, Math.floor(base/360)); // 2..8 aprox
+    PX = Math.max(2, Math.floor(base/360));     // 2..8 aprox según pantalla
   }
 
   // ====== CANVAS HIDPI ======
@@ -25,120 +26,13 @@
   const ctx = canvas.getContext("2d");
   let DPR = Math.max(1, Math.min(3, devicePixelRatio || 1));
 
-  function resize(){
-    DPR = Math.max(1, Math.min(3, devicePixelRatio || 1));
-    const w = innerWidth, h = innerHeight;
-    canvas.width  = Math.floor(w*DPR);
-    canvas.height = Math.floor(h*DPR);
-    canvas.style.width  = w+"px";
-    canvas.style.height = h+"px";
-    ctx.setTransform(DPR,0,0,DPR,0,0);
-    ctx.imageSmoothingEnabled = false;
-    recalcScale();
-    buildCity();
-  }
-  addEventListener("resize", resize, {passive:true});
-  resize();
-
-  // ====== HERRAMIENTAS PIXEL ======
-  // Dibuja "pixels" de una rejilla (sprite) con contorno negro y sombreado
-  function drawSprite(grid, ox, oy, scale = 1){
-    const s = PX*scale;
-    for(let y=0;y<grid.length;y++){
-      for(let x=0;x<grid[0].length;x++){
-        const c = grid[y][x];
-        if(!c) continue;
-        ctx.fillStyle = c;
-        ctx.fillRect(ox + x*s, oy + y*s, s, s);
-      }
-    }
-    // contorno: píxel negro donde adyacente es vacío
-    ctx.fillStyle = "#000";
-    for(let y=0;y<grid.length;y++){
-      for(let x=0;x<grid[0].length;x++){
-        if(!grid[y][x]) continue;
-        const nb = [[1,0],[-1,0],[0,1],[0,-1]];
-        for(const [dx,dy] of nb){
-          const nx=x+dx, ny=y+dy;
-          if(ny<0||ny>=grid.length||nx<0||nx>=grid[0].length||!grid[ny][nx]){
-            ctx.fillRect(ox + x*s, oy + y*s, 1, s); // izq
-            ctx.fillRect(ox + x*s, oy + y*s, s, 1); // top
-            ctx.fillRect(ox + (x+1)*s-1, oy + y*s, 1, s); // der
-            ctx.fillRect(ox + x*s, oy + (y+1)*s-1, s, 1); // bottom
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  // ====== SPRITES (32x32 aprox) ======
-  // Paleta
-  const skin = "#f0bfa1", hairD="#3d3d3d", hairB="#5a3b28";
-  const hoodie="#1e72e6", hoodieDark="#1555ad";
-  const skirt="#f4f4a6", shoe="#333", dogW="#ffffff", dogG="#e8e8e8";
-
-  // Pareja (espalda) con sombreados
-  function makeCouple(breathePhase=0){
-    const w=32,h=32, G = Array.from({length:h},()=>Array(w).fill(null));
-    const add = (x,y,w,h,c)=>{ for(let j=0;j<h;j++) for(let i=0;i<w;i++) G[y+j]?.[x+i]=c; };
-
-    // sombra suelo
-    add(6,28,20,1,"rgba(0,0,0,.4)");
-    add(8,29,16,1,"rgba(0,0,0,.4)");
-
-    // cuello chico
-    add(15,10,2,2,skin);
-    // cabeza chico
-    add(14,6,4,4,hairD);
-    add(14,8,4,2,hairD);
-    // hoodie (respira levemente)
-    const b = Math.round(Math.sin(breathePhase)*1); // -1..1
-    add(10,12+b,12,10,hoodie);   // torso
-    add(10,16+b,12,1,hoodieDark);// pliegue
-    add(10,22+b,12,2,hoodieDark);// bajo
-    // brazo chico abrazando
-    add(18,16+b,8,3,hoodie);
-
-    // chica
-    add(20,10,2,2,skin);          // cuello
-    add(20,8,4,4,hairB);          // cabeza
-    add(18,12,10,8,hoodie);       // hombro/espalda compartida
-    add(22,20,6,8,skirt);         // falda
-    // piernas y zapatos
-    add(12,22+b,2,6,shoe);
-    add(18,22+b,2,6,shoe);
-    add(22,26,2,6,shoe);
-
-    return G;
-  }
-
-  // Perrito 16x12 (dos frames: cola izq/der)
-  function makeDog(frame=0){
-    const w=24,h=16, G = Array.from({length:h},()=>Array(w).fill(null));
-    const add=(x,y,w,h,c)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++)G[y+j]?.[x+i]=c;};
-    // cuerpo
-    add(6,6,12,6,dogW);
-    // cabeza
-    add(3,4,5,6,dogW);
-    // oreja
-    add(8,4,2,2,dogW);
-    // cola animada
-    if(frame===0){ add(18,6,3,2,dogW); add(21,5,1,2,dogG); }
-    else         { add(18,7,3,2,dogW); add(21,8,1,2,dogG); }
-    // patas
-    add(8,12,2,3,dogG); add(14,12,2,3,dogG);
-    // ojo/nariz
-    add(5,6,1,1,"#333"); add(4,8,1,1,"#333");
-    return G;
-  }
-
-  // ====== ESCENA: ventana, ciudad, estrellas, cometa ======
+  // ----- Parallax -----
   const cityLayers = [
     { color:"#1a2544", speed:0.18, buildings:[] },
     { color:"#212c58", speed:0.32, buildings:[] },
     { color:"#2a3772", speed:0.55, buildings:[] },
   ];
+
   function buildCity(){
     const W=innerWidth, H=innerHeight;
     const base=[16,12,9];
@@ -155,20 +49,33 @@
     });
   }
 
+  // ----- Estrellas (normalizadas) -----
   const stars = Array.from({length:200},()=>({
     x: Math.random(), y: Math.random()*0.6, r: Math.random()*1.6+0.4,
     a: Math.random()*0.8+0.2, w: Math.random()*Math.PI*2
   }));
 
-  const comet = { x:0,y:0,speed:10,active:false,trail:[] };
+  // ----- Marco ventana -----
   let windowFrame={x:0,y:0,w:0,h:0};
-  function triggerComet(){
-    const f=windowFrame; comet.active=true; comet.trail=[];
-    comet.x=f.x+f.w+60; comet.y=f.y+Math.random()*f.h*0.45+8*PX;
-  }
-  addEventListener("click", triggerComet);
-  addEventListener("touchstart",(e)=>{triggerComet(); e.preventDefault();},{passive:false});
 
+  // ====== RESIZE (se define DESPUÉS de declarar PX y helpers) ======
+  function resize(){
+    DPR = Math.max(1, Math.min(3, devicePixelRatio || 1));
+    const w = innerWidth, h = innerHeight;
+    canvas.width  = Math.floor(w*DPR);
+    canvas.height = Math.floor(h*DPR);
+    canvas.style.width  = w+"px";
+    canvas.style.height = h+"px";
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.imageSmoothingEnabled = false;
+
+    recalcScale();     // <-- PX ya existe
+    buildCity();
+  }
+  addEventListener("resize", resize, {passive:true});
+  resize();            // <-- se llama recién ahora
+
+  // ====== UTILIDADES DE DIBUJO ======
   function roundRect(x,y,w,h,r,fill){
     ctx.save(); ctx.beginPath();
     ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
@@ -194,14 +101,84 @@
     ctx.stroke(); ctx.restore();
   }
 
+  // Sprite helper (con contorno)
+  function drawSprite(grid, ox, oy, scale = 1){
+    const s = PX*scale;
+    for(let y=0;y<grid.length;y++){
+      for(let x=0;x<grid[0].length;x++){
+        const c = grid[y][x];
+        if(!c) continue;
+        ctx.fillStyle = c;
+        ctx.fillRect(ox + x*s, oy + y*s, s, s);
+      }
+    }
+    // contorno negro
+    ctx.fillStyle = "#000";
+    for(let y=0;y<grid.length;y++){
+      for(let x=0;x<grid[0].length;x++){
+        if(!grid[y][x]) continue;
+        const nb = [[1,0],[-1,0],[0,1],[0,-1]];
+        for(const [dx,dy] of nb){
+          const nx=x+dx, ny=y+dy;
+          if(ny<0||ny>=grid.length||nx<0||nx>=grid[0].length||!grid[ny][nx]){
+            const sPX = PX*scale;
+            ctx.fillRect(ox + x*sPX, oy + y*sPX, 1, sPX);
+            ctx.fillRect(ox + x*sPX, oy + y*sPX, sPX, 1);
+            ctx.fillRect(ox + (x+1)*sPX-1, oy + y*sPX, 1, sPX);
+            ctx.fillRect(ox + x*sPX, oy + (y+1)*sPX-1, sPX, 1);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // ====== SPRITES ======
+  const skin = "#f0bfa1", hairD="#3d3d3d", hairB="#5a3b28";
+  const hoodie="#1e72e6", hoodieDark="#1555ad";
+  const skirt="#f4f4a6", shoe="#333", dogW="#ffffff", dogG="#e8e8e8";
+
+  function makeCouple(breathePhase=0){
+    const w=32,h=32, G = Array.from({length:h},()=>Array(w).fill(null));
+    const add = (x,y,w,h,c)=>{ for(let j=0;j<h;j++) for(let i=0;i<w;i++) G[y+j]?.[x+i]=c; };
+    add(6,28,20,1,"rgba(0,0,0,.4)"); add(8,29,16,1,"rgba(0,0,0,.4)");
+    add(15,10,2,2,skin);
+    add(14,6,4,4,hairD); add(14,8,4,2,hairD);
+    const b = Math.round(Math.sin(breathePhase)*1);
+    add(10,12+b,12,10,hoodie); add(10,16+b,12,1,hoodieDark); add(10,22+b,12,2,hoodieDark);
+    add(18,16+b,8,3,hoodie);
+    add(20,10,2,2,skin); add(20,8,4,4,hairB);
+    add(18,12,10,8,hoodie); add(22,20,6,8,skirt);
+    add(12,22+b,2,6,shoe); add(18,22+b,2,6,shoe); add(22,26,2,6,shoe);
+    return G;
+  }
+
+  function makeDog(frame=0){
+    const w=24,h=16, G = Array.from({length:h},()=>Array(w).fill(null));
+    const add=(x,y,w,h,c)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++)G[y+j]?.[x+i]=c;};
+    add(6,6,12,6,dogW); add(3,4,5,6,dogW); add(8,4,2,2,dogW);
+    if(frame===0){ add(18,6,3,2,dogW); add(21,5,1,2,dogG); }
+    else         { add(18,7,3,2,dogW); add(21,8,1,2,dogG); }
+    add(8,12,2,3,dogG); add(14,12,2,3,dogG);
+    add(5,6,1,1,"#333"); add(4,8,1,1,"#333");
+    return G;
+  }
+
+  // ====== CIELO / VENTANA / COMETA ======
+  const comet = { x:0,y:0,speed:10,active:false,trail:[] };
+  function triggerComet(){
+    const f=windowFrame; comet.active=true; comet.trail=[];
+    comet.x=f.x+f.w+60; comet.y=f.y+Math.random()*f.h*0.45+8*PX;
+  }
+  addEventListener("click", triggerComet);
+  addEventListener("touchstart",(e)=>{triggerComet(); e.preventDefault();},{passive:false});
+
   function drawRoom(){
     const W=innerWidth,H=innerHeight;
-    // pared
     const bg=ctx.createLinearGradient(0,0,0,H);
     bg.addColorStop(0,"#0b1228"); bg.addColorStop(1,"#0a1022");
     ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
 
-    // ventana
     const mx=Math.max(16*PX, W*0.06), my=Math.max(12*PX,H*0.06);
     const fw=Math.max(320, W - mx*2);
     const fh=Math.max(220, Math.min(H*0.64, H - my*2));
@@ -212,7 +189,6 @@
     roundedStroke(fx,fy,fw,fh,6*PX,"rgba(255,180,120,.08)");
     ctx.fillStyle="#6a3c1f"; ctx.fillRect(fx+fw/2-2*PX, fy+2*PX, 4*PX, fh-4*PX);
 
-    // repisa + piso
     ctx.fillStyle="#151b2d"; ctx.fillRect(fx-8*PX, fy+fh, fw+16*PX, 6*PX);
     ctx.fillStyle="#0f1526"; ctx.fillRect(fx-8*PX, fy+fh+6*PX, fw+16*PX, 6*PX);
     ctx.fillStyle="#0c1222"; ctx.fillRect(0, fy+fh+12*PX, W, H-(fy+fh+12*PX));
@@ -223,11 +199,11 @@
   function drawCityAndSky(t){
     const {x,y,w,h}=windowFrame;
     ctx.save(); ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip();
+
     const g=ctx.createLinearGradient(0,y,0,y+h);
     g.addColorStop(0,"#09133a"); g.addColorStop(1,"#030815");
     ctx.fillStyle=g; ctx.fillRect(x,y,w,h);
 
-    // estrellas
     for(const s of stars){
       const tw=0.6+0.4*Math.sin(t/900+s.w);
       ctx.globalAlpha=s.a*tw; ctx.fillStyle="#fff";
@@ -235,7 +211,6 @@
     }
     ctx.globalAlpha=1;
 
-    // edificios
     cityLayers.forEach(L=>{
       for(const b of L.buildings){
         const shift=(t*L.speed)%(w+200);
@@ -245,7 +220,6 @@
       }
     });
 
-    // cometa
     function drawComet(cx,cy){
       const rad=4*PX;
       const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,rad*3);
@@ -271,7 +245,6 @@
       if(comet.x < x-100 || comet.y > y+h+60){ comet.active=false; comet.trail=[]; }
     } else if (Math.random()<0.0025){ triggerComet(); }
 
-    // viñeta
     const vign=ctx.createRadialGradient(x+w/2,y+h/2,Math.min(w,h)*0.2, x+w/2,y+h/2,Math.max(w,h)*0.8);
     vign.addColorStop(0,"rgba(0,0,0,0)"); vign.addColorStop(1,"rgba(0,0,0,0.22)");
     ctx.fillStyle=vign; ctx.fillRect(x,y,w,h);
@@ -280,22 +253,21 @@
   }
 
   // ====== LOOP ======
-  let t0=performance.now(), dogFrame=0, lastSwitch=t0;
+  function makeCouple(breathePhase=0){ /* (ya definida arriba) */ }
+  function makeDog(frame=0){ /* (ya definida arriba) */ }
+
+  let dogFrame=0, lastSwitch=performance.now();
   function loop(t){
     drawRoom();
     drawCityAndSky(t);
 
-    // pareja respirando
-    const breathe = (t/1000)% (2*Math.PI);
+    const breathe = (t/1000) % (2*Math.PI);
     const couple = makeCouple(breathe);
-
-    // posición pareja (centro inferior de la ventana)
     const cw = 64*PX, ch = 64*PX;
     const cx = windowFrame.x + windowFrame.w/2 - cw/2;
     const cy = windowFrame.y + windowFrame.h - ch/2 + 10*PX;
-    drawSprite(couple, cx, cy, 2); // escala x2 (cada celda = 2*PX)
+    drawSprite(couple, cx, cy, 2);
 
-    // perrito (cola alterna)
     if (t - lastSwitch > 450){ dogFrame=(dogFrame+1)%2; lastSwitch=t; }
     const dog = makeDog(dogFrame);
     const dx = windowFrame.x + windowFrame.w/2 - 12*PX;
