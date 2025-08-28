@@ -1,20 +1,136 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Noche Estrellada Animada</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Noche Estrellada – Pixel Art</title>
+<style>
+  :root{ --bg1:#02030a; --bg2:#000000; }
+  html,body{ height:100%; }
+  body{ margin:0; background:#000; overflow:hidden; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
+  canvas{ display:block; }
+  .spotify{
+    position:fixed; right:20px; bottom:20px; z-index:10;
+    border-radius:12px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,.6);
+    background:#0f172a;
+  }
+  .hint{
+    position:fixed; left:16px; bottom:16px; color:#94a3b8; font-size:12px; opacity:.85;
+    background:rgba(0,0,0,.35); padding:6px 8px; border-radius:8px; user-select:none
+  }
+</style>
 </head>
 <body>
   <canvas id="canvas"></canvas>
+
+  <!-- Spotify: ya con tu playlist -->
   <div class="spotify">
-    <iframe style="border-radius:12px"
-  src="https://open.spotify.com/embed/playlist/5I9ZvE52QlLdc8SdU1WCVP"
-  width="300" height="380" frameBorder="0"
-  allowtransparency="true" allow="encrypted-media">
-    </iframe>
+    <iframe style="border:0;width:300px;height:380px;"
+      src="https://open.spotify.com/embed/playlist/5I9ZvE52QlLdc8SdU1WCVP"
+      allow="encrypted-media"></iframe>
   </div>
-  <script src="script.js"></script>
-</body>
-</html>
+
+  <div class="hint">⭐ Tip: recarga la página para otra trayectoria de la estrella fugaz</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d", { alpha:true });
+  function fit(){ canvas.width = innerWidth; canvas.height = innerHeight; ctx.imageSmoothingEnabled = false; }
+  addEventListener("resize", fit); fit();
+
+  // --- Cielo estrellado ---
+  const stars = Array.from({length:140}, () => ({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    r: Math.random()*1.5 + 0.5,
+    a: Math.random()*0.8 + 0.2,
+    w: Math.random()*Math.PI*2
+  }));
+
+  function drawStars(t){
+    for(const s of stars){
+      ctx.globalAlpha = s.a * (0.6 + 0.4 * Math.sin(t/1000 + s.w));
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // --- Sprites en "pixel art" dibujados con canvas ---
+  // Escala base para que se vean nítidos al crecer
+  const PX = 2; // tamaño del pixel base
+
+  // Pareja (trasera), 60x60 px base
+  function drawPareja(px, py){
+    const p = (x,y,w,h,c)=>{ ctx.fillStyle=c; ctx.fillRect(px + x*PX, py + y*PX, w*PX, h*PX); };
+    const sil  = "#46566e", accL="#7b61ad", accR="#ad617b", shoe="#d6d6d6";
+    // sombra suelo
+    ctx.fillStyle = "rgba(30,30,30,.55)";
+    ctx.beginPath(); ctx.ellipse(px+30*PX, py+58*PX, 18*PX, 2.5*PX, 0, 0, Math.PI*2); ctx.fill();
+
+    // Persona izquierda
+    p(14,16,8,8,sil);   // cabeza
+    p(17,24,2,2,sil);   // cuello
+    p(12,26,12,14,accL);// torso+bra
+    p(14,40,8,4,sil);   // cadera
+    p(14,44,3,12,sil);  // pierna izq
+    p(19,44,3,12,sil);  // pierna der
+    p(13,56,4,2,shoe);  // zapatos
+    p(19,56,4,2,shoe);
+
+    // Persona derecha
+    p(36,16,8,8,sil);
+    p(39,24,2,2,sil);
+    p(34,26,12,14,accR);
+    p(36,40,8,4,sil);
+    p(36,44,3,12,sil);
+    p(41,44,3,12,sil);
+    p(35,56,4,2,shoe);
+    p(41,56,4,2,shoe);
+
+    // brillo sutil entre ambos
+    p(28,30,4,4,"rgba(255,196,196,.45)");
+  }
+
+  // Perrito 24x24 (dos frames: mira izq/der)
+  function drawDog(px, py, lookRight=false){
+    const p = (x,y,w,h,c)=>{ ctx.fillStyle=c; ctx.fillRect(px + (lookRight? (24-x-w):x)*PX, py + y*PX, w*PX, h*PX); };
+    const wht="#f5f5f5", nose="#555";
+    // cuerpo
+    p(6,10,12,6,wht);
+    // cabeza
+    p(3,8,5,6,wht);
+    // oreja
+    p(7,8,3,2,wht); p(9,6,1,2,wht);
+    // cola
+    p(18,10,3,2,wht); p(20,8,1,2,wht);
+    // patas
+    p(8,16,2,4,wht); p(14,16,2,4,wht);
+    // ojo y nariz
+    p(5,10,1,1,nose);
+    p(3,12,1,1,nose);
+  }
+
+  // Estrella fugaz (cabeza + cola)
+  function drawComet(x, y, scale=1){
+    // cabeza brillante
+    const rad = 4*scale;
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, rad*3);
+    grad.addColorStop(0,"rgba(255,255,210,1)");
+    grad.addColorStop(1,"rgba(255,255,210,0)");
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(x,y,rad*3,0,Math.PI*2); ctx.fill();
+
+    // cola
+    ctx.globalAlpha = .9;
+    for(let i=0;i<14;i++){
+      ctx.globalAlpha = Math.max(0, .9 - i*0.07);
+      ctx.fillStyle = "rgba(255,240,140,1)";
+      ctx.fillRect(x + i*6*scale, y + (i%2?1:-1)*scale, 2*scale, 1*scale);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Est
 
