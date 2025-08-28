@@ -1,24 +1,26 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Noche Estrellada – Pixel Art</title>
-<link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cuarto Nocturno – Pixel Art Animado</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <canvas id="canvas"></canvas>
+  <canvas id="scene"></canvas>
 
-  <!-- Spotify -->
+  <!-- Spotify (tu playlist) -->
   <div class="spotify">
     <iframe style="border:0;width:300px;height:380px"
       src="https://open.spotify.com/embed/playlist/5I9ZvE52QlLdc8SdU1WCVP"
       allow="encrypted-media"></iframe>
   </div>
 
-  <div class="hint">⭐ Si no ves nada, revisa si aparece un mensaje rojo arriba (error JS).</div>
+  <!-- Si algo falla, se verá arriba -->
+  <div id="err" class="err" hidden></div>
 
   <script src="script.js"></script>
 </body>
 </html>
+
 
