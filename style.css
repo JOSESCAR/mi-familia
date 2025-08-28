@@ -17,28 +17,19 @@ canvas { display:block }
   box-shadow:0 12px 40px rgba(0,0,0,.6);
   background:#0f172a;
 }
-.hint {
-  position:fixed;
-  left:16px;
-  bottom:16px;
-  color:#aab4c3;
-  font-size:12px;
-  background:rgba(0,0,0,.35);
-  padding:6px 8px;
-  border-radius:8px;
-  user-select:none;
-}
+
 .err {
   position:fixed;
   left:16px;
-  top:16px;
   right:16px;
-  color:#ff6b6b;
-  background:rgba(40,0,0,.7);
-  padding:10px 12px;
-  border-radius:8px;
-  line-height:1.4;
-  white-space:pre-wrap;
-  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  top:16px;
   z-index:99;
+  white-space:pre-wrap;
+  line-height:1.35;
+  padding:10px 12px;
+  color:#ffdede;
+  background:rgba(60,0,0,.75);
+  border:1px solid rgba(255,120,120,.35);
+  border-radius:10px;
+  font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
