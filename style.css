@@ -1,13 +1,44 @@
+html,body { height:100% }
 body {
-  margin: 0;
-  overflow: hidden;
-  background: #000;
+  margin:0;
+  background:#000;
+  overflow:hidden;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
 }
-canvas {
-  display: block;
-}
+canvas { display:block }
+
 .spotify {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  z-index:10;
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 12px 40px rgba(0,0,0,.6);
+  background:#0f172a;
+}
+.hint {
+  position:fixed;
+  left:16px;
+  bottom:16px;
+  color:#aab4c3;
+  font-size:12px;
+  background:rgba(0,0,0,.35);
+  padding:6px 8px;
+  border-radius:8px;
+  user-select:none;
+}
+.err {
+  position:fixed;
+  left:16px;
+  top:16px;
+  right:16px;
+  color:#ff6b6b;
+  background:rgba(40,0,0,.7);
+  padding:10px 12px;
+  border-radius:8px;
+  line-height:1.4;
+  white-space:pre-wrap;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  z-index:99;
 }
