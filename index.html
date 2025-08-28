@@ -113,7 +113,7 @@
   const skin='#f0bfa1', hairD='#3d3d3d', hairB='#5a3b28', hoodie='#1e72e6', hoodieDark='#1555ad', skirt='#f4f4a6', shoe='#333', dogW='#fff', dogG='#e8e8e8';
   function makeCouple(breathe=0){
     const w=32,h=32,G=Array.from({length:h},()=>Array(w).fill(null));
-    const add=(x,y,w,h,c)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++)G[y+j]?.[x+i]=c;};
+    const add=(x,y,w,h,c)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++)if(G[y+j]&&G[y+j][x+i]!==undefined)G[y+j][x+i]=c;};
     add(6,28,20,1,'rgba(0,0,0,.4)'); add(8,29,16,1,'rgba(0,0,0,.4)');
     add(15,10,2,2,skin); add(14,6,4,4,hairD); add(14,8,4,2,hairD);
     const b=Math.round(Math.sin(breathe)*1);
@@ -126,7 +126,7 @@
   }
   function makeDog(f=0){
     const w=24,h=16,G=Array.from({length:h},()=>Array(w).fill(null));
-    const add=(x,y,w,h,c)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++)G[y+j]?.[x+i]=c;};
+    const add=(x,y,w,h,c)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++)if(G[y+j]&&G[y+j][x+i]!==undefined)G[y+j][x+i]=c;};
     add(6,6,12,6,dogW); add(3,4,5,6,dogW); add(8,4,2,2,dogW);
     if(f===0){ add(18,6,3,2,dogW); add(21,5,1,2,dogG); }
     else     { add(18,7,3,2,dogW); add(21,8,1,2,dogG); }
@@ -143,11 +143,6 @@
     const bg=ctx.createLinearGradient(0,0,0,H);
     bg.addColorStop(0,'#0b1228'); bg.addColorStop(1,'#0a1022');
     ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
-
-    // DIAGNÓSTICO
-    ctx.lineWidth=10; ctx.strokeStyle='orange'; ctx.strokeRect(20,20,W-40,H-40);
-    ctx.fillStyle='#fff'; ctx.font='bold 16px system-ui, sans-serif';
-    ctx.fillText('RUNNING v9', 32, 40);
 
     // ventana
     const mx=Math.max(16*PX, W*0.06), my=Math.max(12*PX, H*0.06);
@@ -168,9 +163,10 @@
 
     windowFrame={x:fx,y:fy,w:fw,h:fh};
 
-    // punto que se mueve (diagnóstico)
-    const dotX=(performance.now()/8)%W;
-    ctx.beginPath(); ctx.arc(dotX, 60, 5, 0, Math.PI*2); ctx.fill();
+    // Indicador sutil de que está funcionando (esquina superior izquierda)
+    ctx.fillStyle='rgba(255,255,255,0.3)';
+    ctx.font='10px monospace';
+    ctx.fillText('v9 running', 10, 20);
   }
 
   function drawCityAndSky(t){
