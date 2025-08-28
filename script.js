@@ -14,11 +14,11 @@
   window.onerror = showError;
   window.addEventListener("unhandledrejection", e => showError("Promise rejection","",0,0,e.reason));
 
-  // ====== ESCALA PIXEL (debe ir ANTES de cualquier uso) ======
-  let PX = 2;                                   // <-- declarado antes de todo
+  // ====== ESCALA PIXEL (usa var para evitar TDZ) ======
+  var PX = 2; // <-- ¡con var!
   function recalcScale(){
     const base = Math.min(innerWidth, innerHeight);
-    PX = Math.max(2, Math.floor(base/360));     // 2..8 aprox según pantalla
+    PX = Math.max(2, Math.floor(base/360));
   }
 
   // ====== CANVAS HIDPI ======
@@ -26,13 +26,12 @@
   const ctx = canvas.getContext("2d");
   let DPR = Math.max(1, Math.min(3, devicePixelRatio || 1));
 
-  // ----- Parallax -----
+  // ====== DATOS DE ESCENA (definidos antes de resize) ======
   const cityLayers = [
     { color:"#1a2544", speed:0.18, buildings:[] },
     { color:"#212c58", speed:0.32, buildings:[] },
     { color:"#2a3772", speed:0.55, buildings:[] },
   ];
-
   function buildCity(){
     const W=innerWidth, H=innerHeight;
     const base=[16,12,9];
@@ -49,16 +48,14 @@
     });
   }
 
-  // ----- Estrellas (normalizadas) -----
   const stars = Array.from({length:200},()=>({
     x: Math.random(), y: Math.random()*0.6, r: Math.random()*1.6+0.4,
     a: Math.random()*0.8+0.2, w: Math.random()*Math.PI*2
   }));
-
-  // ----- Marco ventana -----
+  const comet = { x:0,y:0,speed:10,active:false,trail:[] };
   let windowFrame={x:0,y:0,w:0,h:0};
 
-  // ====== RESIZE (se define DESPUÉS de declarar PX y helpers) ======
+  // ====== RESIZE (se define y luego se llama) ======
   function resize(){
     DPR = Math.max(1, Math.min(3, devicePixelRatio || 1));
     const w = innerWidth, h = innerHeight;
@@ -69,13 +66,13 @@
     ctx.setTransform(DPR,0,0,DPR,0,0);
     ctx.imageSmoothingEnabled = false;
 
-    recalcScale();     // <-- PX ya existe
+    recalcScale();    // PX ya existe (var evita TDZ)
     buildCity();
   }
   addEventListener("resize", resize, {passive:true});
-  resize();            // <-- se llama recién ahora
+  resize();
 
-  // ====== UTILIDADES DE DIBUJO ======
+  // ====== HELPERS DE DIBUJO ======
   function roundRect(x,y,w,h,r,fill){
     ctx.save(); ctx.beginPath();
     ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
@@ -100,19 +97,14 @@
     ctx.quadraticCurveTo(x,y,x+8*PX,y);
     ctx.stroke(); ctx.restore();
   }
-
-  // Sprite helper (con contorno)
   function drawSprite(grid, ox, oy, scale = 1){
     const s = PX*scale;
     for(let y=0;y<grid.length;y++){
       for(let x=0;x<grid[0].length;x++){
-        const c = grid[y][x];
-        if(!c) continue;
-        ctx.fillStyle = c;
-        ctx.fillRect(ox + x*s, oy + y*s, s, s);
+        const c = grid[y][x]; if(!c) continue;
+        ctx.fillStyle = c; ctx.fillRect(ox + x*s, oy + y*s, s, s);
       }
     }
-    // contorno negro
     ctx.fillStyle = "#000";
     for(let y=0;y<grid.length;y++){
       for(let x=0;x<grid[0].length;x++){
@@ -140,7 +132,7 @@
 
   function makeCouple(breathePhase=0){
     const w=32,h=32, G = Array.from({length:h},()=>Array(w).fill(null));
-    const add = (x,y,w,h,c)=>{ for(let j=0;j<h;j++) for(let i=0;i<w;i++) G[y+j]?.[x+i]=c; };
+    const add=(x,y,w,h,c)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++)G[y+j]?.[x+i]=c;};
     add(6,28,20,1,"rgba(0,0,0,.4)"); add(8,29,16,1,"rgba(0,0,0,.4)");
     add(15,10,2,2,skin);
     add(14,6,4,4,hairD); add(14,8,4,2,hairD);
@@ -152,7 +144,6 @@
     add(12,22+b,2,6,shoe); add(18,22+b,2,6,shoe); add(22,26,2,6,shoe);
     return G;
   }
-
   function makeDog(frame=0){
     const w=24,h=16, G = Array.from({length:h},()=>Array(w).fill(null));
     const add=(x,y,w,h,c)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++)G[y+j]?.[x+i]=c;};
@@ -164,15 +155,12 @@
     return G;
   }
 
-  // ====== CIELO / VENTANA / COMETA ======
-  const comet = { x:0,y:0,speed:10,active:false,trail:[] };
-  function triggerComet(){
-    const f=windowFrame; comet.active=true; comet.trail=[];
-    comet.x=f.x+f.w+60; comet.y=f.y+Math.random()*f.h*0.45+8*PX;
-  }
+  // ====== INTERACCIÓN ======
+  function triggerComet(){ const f=windowFrame; comet.active=true; comet.trail=[]; comet.x=f.x+f.w+60; comet.y=f.y+Math.random()*f.h*0.45+8*PX; }
   addEventListener("click", triggerComet);
   addEventListener("touchstart",(e)=>{triggerComet(); e.preventDefault();},{passive:false});
 
+  // ====== ESCENA ======
   function drawRoom(){
     const W=innerWidth,H=innerHeight;
     const bg=ctx.createLinearGradient(0,0,0,H);
@@ -253,8 +241,8 @@
   }
 
   // ====== LOOP ======
-  function makeCouple(breathePhase=0){ /* (ya definida arriba) */ }
-  function makeDog(frame=0){ /* (ya definida arriba) */ }
+  function makeCouple(breathePhase=0){ /* definido arriba */ }
+  function makeDog(frame=0){ /* definido arriba */ }
 
   let dogFrame=0, lastSwitch=performance.now();
   function loop(t){
