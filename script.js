@@ -1,14 +1,14 @@
 (() => {
-  // ====== ERRORES VISIBLES ======
+  // ====== ERRORES EN PANTALLA ======
   const errBox = document.getElementById("err");
-  function showError(message, source, line, col, err){
+  function showError(msg, src, line, col, err){
     if (!errBox) return false;
     errBox.hidden = false;
-    errBox.textContent = "[ERROR] " + message +
-      (source? "\nFuente: "+source:"") +
+    errBox.textContent = "[ERROR] " + msg +
+      (src? "\nFuente: "+src:"") +
       (line? "\nLínea: "+line+(col? ", Col: "+col:""):"") +
       (err && err.stack? "\nStack:\n"+err.stack:"");
-    console.error(message, source, line, col, err);
+    console.error(msg, src, line, col, err);
     return true;
   }
   window.onerror = showError;
@@ -16,10 +16,7 @@
 
   // ====== ESCALA PIXEL (sin TDZ) ======
   var PX = 2;
-  function recalcScale(){
-    const base = Math.min(innerWidth, innerHeight);
-    PX = Math.max(2, Math.floor(base/360)); // 2..8 aprox
-  }
+  function recalcScale(){ PX = Math.max(2, Math.floor(Math.min(innerWidth, innerHeight)/360)); }
 
   // ====== CANVAS HIDPI ======
   const canvas = document.getElementById("scene");
@@ -32,7 +29,14 @@
     { color:"#212c58", speed:0.32, buildings:[] },
     { color:"#2a3772", speed:0.55, buildings:[] },
   ];
+  const stars = Array.from({length:200},()=>({
+    x: Math.random(), y: Math.random()*0.6, r: Math.random()*1.6+0.4,
+    a: Math.random()*0.8+0.2, w: Math.random()*Math.PI*2
+  }));
+  const comet = { x:0,y:0,speed:10,active:false,trail:[] };
+  let windowFrame={x:0,y:0,w:0,h:0};
 
+  // ====== RESIZE ======
   function buildCity(){
     const W=innerWidth, H=innerHeight;
     const base=[16,12,9];
@@ -48,16 +52,6 @@
       }
     });
   }
-
-  const stars = Array.from({length:200},()=>({
-    x: Math.random(), y: Math.random()*0.6, r: Math.random()*1.6+0.4,
-    a: Math.random()*0.8+0.2, w: Math.random()*Math.PI*2
-  }));
-
-  const comet = { x:0,y:0,speed:10,active:false,trail:[] };
-  let windowFrame={x:0,y:0,w:0,h:0};
-
-  // ====== RESIZE ======
   function resize(){
     DPR = Math.max(1, Math.min(3, devicePixelRatio || 1));
     const w = innerWidth, h = innerHeight;
@@ -67,14 +61,13 @@
     canvas.style.height = h+"px";
     ctx.setTransform(DPR,0,0,DPR,0,0);
     ctx.imageSmoothingEnabled = false;
-
-    recalcScale();    // PX ya existe
+    recalcScale();
     buildCity();
   }
   addEventListener("resize", resize, {passive:true});
   resize();
 
-  // ====== HELPERS DE DIBUJO ======
+  // ====== HELPERS ======
   function roundRect(x,y,w,h,r,fill){
     ctx.save(); ctx.beginPath();
     ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
@@ -112,18 +105,12 @@
     for(let y=0;y<grid.length;y++){
       for(let x=0;x<grid[0].length;x++){
         if(!grid[y][x]) continue;
-        const nb = [[1,0],[-1,0],[0,1],[0,-1]];
-        for(const [dx,dy] of nb){
-          const nx=x+dx, ny=y+dy;
-          if(ny<0||ny>=grid.length||nx<0||nx>=grid[0].length||!grid[ny][nx]){
-            const sPX = PX*scale;
-            ctx.fillRect(ox + x*sPX, oy + y*sPX, 1, sPX);
-            ctx.fillRect(ox + x*sPX, oy + y*sPX, sPX, 1);
-            ctx.fillRect(ox + (x+1)*sPX-1, oy + y*sPX, 1, sPX);
-            ctx.fillRect(ox + x*sPX, oy + (y+1)*sPX-1, sPX, 1);
-            break;
-          }
-        }
+        const sPX = PX*scale;
+        // borde completo (más simple/seguro)
+        ctx.fillRect(ox + x*sPX, oy + y*sPX, sPX, 1);
+        ctx.fillRect(ox + x*sPX, oy + y*sPX, 1, sPX);
+        ctx.fillRect(ox + (x+1)*sPX-1, oy + y*sPX, 1, sPX);
+        ctx.fillRect(ox + x*sPX, oy + (y+1)*sPX-1, sPX, 1);
       }
     }
   }
@@ -136,22 +123,17 @@
   function makeCouple(breathePhase=0){
     const w=32,h=32, G = Array.from({length:h},()=>Array(w).fill(null));
     const add = (x,y,w,h,c)=>{ for(let j=0;j<h;j++) for(let i=0;i<w;i++) G[y+j]?.[x+i]=c; };
-    // sombra suelo
     add(6,28,20,1,"rgba(0,0,0,.4)"); add(8,29,16,1,"rgba(0,0,0,.4)");
-    // chico
-    add(15,10,2,2,skin);               // cuello
-    add(14,6,4,4,hairD); add(14,8,4,2,hairD); // cabeza
+    add(15,10,2,2,skin);
+    add(14,6,4,4,hairD); add(14,8,4,2,hairD);
     const b = Math.round(Math.sin(breathePhase)*1);
     add(10,12+b,12,10,hoodie); add(10,16+b,12,1,hoodieDark); add(10,22+b,12,2,hoodieDark);
-    add(18,16+b,8,3,hoodie);           // brazo
-    // chica
+    add(18,16+b,8,3,hoodie);
     add(20,10,2,2,skin); add(20,8,4,4,hairB);
     add(18,12,10,8,hoodie); add(22,20,6,8,skirt);
-    // piernas/zapatos
     add(12,22+b,2,6,shoe); add(18,22+b,2,6,shoe); add(22,26,2,6,shoe);
     return G;
   }
-
   function makeDog(frame=0){
     const w=24,h=16, G = Array.from({length:h},()=>Array(w).fill(null));
     const add=(x,y,w,h,c)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++)G[y+j]?.[x+i]=c;};
@@ -168,13 +150,20 @@
   addEventListener("click", triggerComet);
   addEventListener("touchstart",(e)=>{triggerComet(); e.preventDefault();},{passive:false});
 
-  // ====== ESCENA PRINCIPAL ======
+  // ====== DIBUJO PRINCIPAL ======
   function drawRoom(){
     const W=innerWidth,H=innerHeight;
+    // fondo
     const bg=ctx.createLinearGradient(0,0,0,H);
     bg.addColorStop(0,"#0b1228"); bg.addColorStop(1,"#0a1022");
     ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
 
+    // --- BORDE DE PRUEBA MUY VISIBLE ---
+    ctx.lineWidth = 12;
+    ctx.strokeStyle = "orange";
+    ctx.strokeRect(20,20,W-40,H-40);
+
+    // ventana
     const mx=Math.max(16*PX, W*0.06), my=Math.max(12*PX,H*0.06);
     const fw=Math.max(320, W - mx*2);
     const fh=Math.max(220, Math.min(H*0.64, H - my*2));
@@ -200,6 +189,7 @@
     g.addColorStop(0,"#09133a"); g.addColorStop(1,"#030815");
     ctx.fillStyle=g; ctx.fillRect(x,y,w,h);
 
+    // estrellas
     for(const s of stars){
       const tw=0.6+0.4*Math.sin(t/900+s.w);
       ctx.globalAlpha=s.a*tw; ctx.fillStyle="#fff";
@@ -207,6 +197,7 @@
     }
     ctx.globalAlpha=1;
 
+    // edificios
     cityLayers.forEach(L=>{
       for(const b of L.buildings){
         const shift=(t*L.speed)%(w+200);
@@ -216,6 +207,7 @@
       }
     });
 
+    // cometa
     function drawComet(cx,cy){
       const rad=4*PX;
       const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,rad*3);
@@ -239,14 +231,24 @@
       ctx.globalAlpha=1; drawComet(comet.x,comet.y);
       comet.x -= comet.speed; comet.y += comet.speed*0.18;
       if(comet.x < x-100 || comet.y > y+h+60){ comet.active=false; comet.trail=[]; }
-    } else if (Math.random()<0.0025){ triggerComet(); }
+    } else if (Math.random()<0.0025){ comet.active=true; comet.trail=[]; comet.x=x+w+60; comet.y=y+Math.random()*h*0.45+8*PX; }
 
+    // viñeta
     const vign=ctx.createRadialGradient(x+w/2,y+h/2,Math.min(w,h)*0.2, x+w/2,y+h/2,Math.max(w,h)*0.8);
     vign.addColorStop(0,"rgba(0,0,0,0)"); vign.addColorStop(1,"rgba(0,0,0,0.22)");
     ctx.fillStyle=vign; ctx.fillRect(x,y,w,h);
 
     ctx.restore();
+
+    // --- PUNTO DE PRUEBA (debe cruzar la pantalla) ---
+    const dotX = (t/8) % innerWidth;
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(dotX, 30, 4, 0, Math.PI*2); ctx.fill();
   }
+
+  // ====== SPRITES PAREJA / PERRO ======
+  function makeCouple(b){ /* ya definida arriba – esta línea sólo evita plegado por editor */ }
+  function makeDog(f){ /* idem */ }
 
   // ====== LOOP ======
   let dogFrame=0, lastSwitch=performance.now();
@@ -254,7 +256,7 @@
     drawRoom();
     drawCityAndSky(t);
 
-    // pareja (respira)
+    // pareja
     const breathe = (t/1000) % (2*Math.PI);
     const couple = makeCouple(breathe);
     const cw = 64*PX, ch = 64*PX;
@@ -262,7 +264,7 @@
     const cy = windowFrame.y + windowFrame.h - ch/2 + 10*PX;
     drawSprite(couple, cx, cy, 2);
 
-    // perrito (cola alterna)
+    // perro
     if (t - lastSwitch > 450){ dogFrame=(dogFrame+1)%2; lastSwitch=t; }
     const dog = makeDog(dogFrame);
     const dx = windowFrame.x + windowFrame.w/2 - 12*PX;
