@@ -3,31 +3,62 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Noche Pixel – romántica v11</title>
+  <title>Noche Pixel – romántica v12 (compact)</title>
   <style>
     :root { --radius: 14px; }
     * { box-sizing: border-box }
     html, body { height: 100%; margin: 0; overflow: hidden; }
-    body { background:#0b1120; font-family:system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+    body { background:#0b1120; font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; }
     #scene { position:fixed; inset:0; width:100vw; height:100vh; display:block; }
+
+    /* === Reproductor Spotify compacto === */
     .spotify{
-      position:fixed; right:max(12px, env(safe-area-inset-right)); bottom:max(12px, env(safe-area-inset-bottom));
-      border-radius:var(--radius); overflow:hidden; box-shadow:0 18px 60px rgba(0,0,0,.55); background:#0f172a; z-index:10;
+      position:fixed;
+      right:max(10px, env(safe-area-inset-right));
+      bottom:max(10px, env(safe-area-inset-bottom));
+      border-radius:var(--radius);
+      overflow:hidden;
+      box-shadow:0 18px 60px rgba(0,0,0,.55);
+      background:#0f172a;
+      z-index:10;
     }
-    .spotify iframe{ display:block; border:0; width:clamp(250px,24vw,340px); height:clamp(260px,42vh,420px); }
-    @media (max-width:640px){ .spotify{ right:50%; transform:translateX(50%); top:max(10px, env(safe-area-inset-top)); bottom:auto; } }
+    /* Tamaño reducido: portada + controles (sin lista) */
+    .spotify iframe{
+      display:block; border:0;
+      width:clamp(180px, 40vw, 240px);
+      height:152px;                 /* altura mínima para playlist compacta */
+    }
+
+    /* En móviles: centrar arriba para no tapar la pareja */
+    @media (max-width:640px){
+      .spotify{
+        right:50%; transform:translateX(50%);
+        top:max(10px, env(safe-area-inset-top));
+        bottom:auto;
+      }
+      .spotify iframe{
+        width:200px;  /* más estrecho en móvil */
+        height:152px;
+      }
+    }
   </style>
 </head>
 <body>
   <canvas id="scene"></canvas>
 
+  <!-- Usa tu playlist en modo oscuro y compacto -->
   <div class="spotify">
-    <iframe src="https://open.spotify.com/embed/playlist/5I9ZvE52QlLdc8SdU1WCVP" allow="encrypted-media" loading="lazy" title="Spotify"></iframe>
+    <iframe
+      src="https://open.spotify.com/embed/playlist/5I9ZvE52QlLdc8SdU1WCVP?theme=0"
+      allow="encrypted-media"
+      loading="lazy"
+      title="Spotify – Mi amor en forma de boleros">
+    </iframe>
   </div>
 
 <script>
+/* ================== ESCENA PIXEL ROMÁNTICA (igual que v11) ================== */
 (function(){
-  // ====== Canvas & escala ======
   const canvas = document.getElementById('scene');
   const ctx = canvas.getContext('2d');
   if(!ctx){ alert("Tu navegador no soporta canvas 2D"); return; }
@@ -53,7 +84,6 @@
   }
   addEventListener('resize', resize, {passive:true});
 
-  // ====== Datos de escena ======
   const stars = Array.from({length:190},()=>({
     x:Math.random(), y:Math.random()*0.65, r:Math.random()*1.7+0.5,
     p:Math.random()*Math.PI*2, a:0.55+Math.random()*0.45
@@ -81,7 +111,7 @@
   const comet = {x:0,y:0,active:false,trail:[],speed:10};
   let windowFrame={x:0,y:0,w:0,h:0};
 
-  // ====== Guirnalda ======
+  /* Guirnalda */
   let bulbs = [];
   function layoutFairyLights(){
     const f = windowFrame;
@@ -114,7 +144,7 @@
     });
   }
 
-  // ====== Corazones ======
+  /* Corazones */
   let hearts = [];
   function layoutHearts(reset=false){
     if(reset) hearts=[];
@@ -160,7 +190,7 @@
   }
   function drawHearts(){ hearts.forEach(h=> drawPixelHeart(h.x, h.y, h.s, h.hue, h.a)); }
 
-  // ====== Luciérnagas ======
+  /* Luciérnagas */
   let fireflies = [];
   function layoutFireflies(){
     const count = 20;
@@ -185,7 +215,7 @@
     });
   }
 
-  // ====== Sprites ======
+  /* Sprites */
   const skin1='#f0bfa1', skin2='#d4a574', hairDark='#3d2817', hairBrown='#8b4513';
   const hoodie1='#1e72e6', hoodie1Dark='#1555ad', sweater2='#e74c3c', sweater2Dark='#c0392b';
   const jeans='#2c3e50', skirt='#f39c12', shoe='#2c2c2c';
@@ -242,10 +272,9 @@
       }
     };
     const dogW='#fff', dogG='#e8e8e8';
-    // cuerpo acurrucado
-    set(6,8,12,5,dogW); set(4,9,4,4,dogW); // cabeza pegada
-    set(16,10,3,2,dogG); // patitas escondidas
-    set(7,9,1,1,'#333'); // ojo cerrado
+    set(6,8,12,5,dogW); set(4,9,4,4,dogW);
+    set(16,10,3,2,dogG);
+    set(7,9,1,1,'#333');
     return G;
   }
 
@@ -259,7 +288,7 @@
     }
   }
 
-  // ====== Interacción ======
+  /* Interacción */
   function triggerComet(){ const f=windowFrame; comet.active=true; comet.trail=[]; comet.x=f.x+f.w+60; comet.y=f.y+Math.random()*f.h*0.45+8*PX; }
   let lastInteract = performance.now();
   function onInteract(){ lastInteract = performance.now(); triggerComet(); burstHearts(); }
@@ -274,7 +303,7 @@
     }
   }
 
-  // ====== Sala y ventana ======
+  /* Sala y ventana */
   function drawRoom(){
     const W=innerWidth,H=innerHeight;
     const bg=ctx.createLinearGradient(0,0,0,H);
@@ -297,7 +326,7 @@
     windowFrame={x:fx,y:fy,w:fw,h:fh};
   }
 
-  // ====== Cielo, ciudad, cometa ======
+  /* Cielo, ciudad, cometa */
   function drawCityAndSky(t){
     const {x,y,w,h}=windowFrame;
     ctx.save(); ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip();
@@ -306,14 +335,12 @@
     g.addColorStop(0,"#0b1c4a"); g.addColorStop(0.7,"#071033"); g.addColorStop(1,"#050a19");
     ctx.fillStyle=g; ctx.fillRect(x,y,w,h);
 
-    // luna
     const mx = x + w*0.78, my = y + h*0.22, moonR = 10*PX;
     const halo = ctx.createRadialGradient(mx,my,0, mx,my, moonR*5);
     halo.addColorStop(0,'rgba(240,240,255,0.35)'); halo.addColorStop(1,'rgba(240,240,255,0)');
     ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(mx,my,moonR*5,0,Math.PI*2); ctx.fill();
     ctx.fillStyle="#f4f6ff"; ctx.beginPath(); ctx.arc(mx,my,moonR,0,Math.PI*2); ctx.fill();
 
-    // estrellas
     for(const s of stars){
       const tw=0.6+0.4*Math.sin(t/900+s.p);
       ctx.globalAlpha=s.a*tw; ctx.fillStyle="#fff";
@@ -321,7 +348,6 @@
     }
     ctx.globalAlpha=1;
 
-    // edificios y ventanas
     layers.forEach((L, idx)=>{
       for(const b of L.b){
         const shift=(t*L.speed)%(w+200);
@@ -340,7 +366,6 @@
       }
     });
 
-    // cometa
     function drawComet(cx,cy){
       const rad=4*PX;
       const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,rad*3);
@@ -362,8 +387,7 @@
       if(comet.x < x-100 || comet.y > y+h+60){ comet.active=false; comet.trail=[]; }
     } else if(Math.random()<0.0025){ triggerComet(); }
 
-    // viñeta + tinte
-    const vign=ctx.createRadialGradient(x+w/2,y+h/2,Math.min(w,h)*0.25, x+w/2,y+h/2,Math.max(w,h)*0.85);
+    const vign=ctx.createRadialGradient(x+w/2,y+h/2,Math.min(w,h)*0.25, x+w/2,y*h/2,Math.max(w,h)*0.85);
     vign.addColorStop(0,"rgba(0,0,0,0)"); vign.addColorStop(1,"rgba(0,0,0,0.22)");
     ctx.fillStyle=vign; ctx.fillRect(x,y,w,h);
     ctx.fillStyle="rgba(255,60,120,0.06)"; ctx.fillRect(x,y,w,h);
@@ -371,20 +395,14 @@
     ctx.restore();
   }
 
-  // ====== Zzz del perrito dormido ======
+  /* Zzz del perrito dormido */
   let zs = [];
-  function spawnZ(x,y){
-    zs.push({x,y,a:1,vy:0.3+Math.random()*0.2});
-  }
-  function updateZs(){
-    zs.forEach(z=>{ z.y-=z.vy; z.a-=0.01; });
-    zs = zs.filter(z=> z.a>0);
-  }
+  function spawnZ(x,y){ zs.push({x,y,a:1,vy:0.3+Math.random()*0.2}); }
+  function updateZs(){ zs.forEach(z=>{ z.y-=z.vy; z.a-=0.01; }); zs = zs.filter(z=> z.a>0); }
   function drawZs(){
     ctx.globalAlpha = 1;
     zs.forEach(z=>{
       ctx.globalAlpha = Math.max(0,z.a);
-      // Z en pixel (3x3 aprox)
       ctx.fillStyle = "#d7d7ff";
       const s = PX;
       ctx.fillRect(z.x, z.y, 3*s, s);
@@ -394,11 +412,10 @@
     ctx.globalAlpha = 1;
   }
 
-  // ====== Loop ======
+  /* Loop */
   let dogFrame=0, lastSwitch=performance.now();
   function loop(t){
     ctx.clearRect(0,0,canvas.width,canvas.height);
-
     drawRoom();
     drawCityAndSky(t);
     drawFairyLights(t);
@@ -410,7 +427,6 @@
 
     updateHearts(); drawHearts();
 
-    // estado del perrito: duerme si no hay interacción en 8s
     const idleMs = t - lastInteract;
     const sleeping = idleMs > 8000;
 
@@ -430,8 +446,6 @@
     requestAnimationFrame(loop);
   }
 
-  // ====== Init ======
-  function triggerComet(){ const f=windowFrame; comet.active=true; comet.trail=[]; comet.x=f.x+f.w+60; comet.y=f.y+Math.random()*f.h*0.45+8*PX; }
   resize();
   requestAnimationFrame(loop);
 })();
