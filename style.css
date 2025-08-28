@@ -1,0 +1,13 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+}
+canvas {
+  display: block;
+}
+.spotify {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+}
