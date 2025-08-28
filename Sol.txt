@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amor en Pixel – Bajo las Estrellas</title>
+<meta name="description" content="Chica con lentes y chico abrazando un perrito blanco mirando las estrellas, estrella fugaz y música chiptune. 100% pixel y listo para GitHub Pages.">
+<meta name="theme-color" content="#0c1320">
+<style>
+  :root{
+    --bg:#0c1320; --panel:#0d1628; --border:#1c2a40;
+    --text:#e8f0ff; --muted:#a9bed8; --accent:#ffdca8;
+    --radius:14px; --shadow:0 18px 48px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:
+      radial-gradient(1200px 900px at 70% 10%, #12223b 0%, var(--bg) 55%),
+      linear-gradient(#0b1220, #0c1320);
+    color:var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    overflow:hidden;
+  }
+  canvas#scene{
+    position:fixed; inset:0; width:100vw; height:100vh;
+    display:block; image-rendering: pixelated; /* enfatiza el estilo pixel */
+  }
+  main{
+    position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
+    width:min(960px, calc(100% - 20px));
+    background: color-mix(in srgb, var(--panel) 92%, transparent);
+    backdrop-filter: blur(10px);
+    border:1px solid var(--border);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:10px 12px;
+  }
+  h1{margin:0 0 6px; font-size: clamp(18px, 2.6vw, 24px); letter-spacing:.3px}
+  p.small{margin:.25rem 0 .75rem; color:var(--muted); font-size:12px}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  button{
+    appearance:none; border:1px solid #29445e; background:#13263a; color:var(--text);
+    padding:8px 12px; border-radius:12px; cursor:pointer; transition:.2s;
+  }
+  button:hover{transform:translateY(-1px); background:#1a3450}
+  .spacer{flex:1}
+  .badge{font-size:12px; color:#bcd0ea; padding:6px 10px; border-radius:999px; border:1px solid #234; background:#102036;}
+  .gold{color:var(--accent)}
+  .hint{font-size:11px; color:#8fb0cc}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="Noche estrellada en pixel art con pareja y perrito mirando el cielo"></canvas>
+
+<main>
+  <h1>✨ Amor en Pixel – Bajo las Estrellas</h1>
+  <p class="small">Chica con lentes y chico abrazando un perrito blanco. Estrella fugaz y chiptune suave. 100% HTML/JS, ideal para <span class="gold">GitHub Pages</span>.</p>
+  <div class="row">
+    <button id="toggle-music" title="Reproducir/Pausar música">🎵 Reproducir música</button>
+    <button id="shooting" title="Lanzar una estrella fugaz ahora">🌠 Estrella fugaz</button>
+    <button id="save" title="Descargar PNG">⬇️ Descargar imagen</button>
+    <div class="spacer"></div>
+    <span class="badge">HTML Canvas + WebAudio</span>
+  </div>
+  <div class="row">
+    <span class="hint">Nota: por políticas del navegador, la música empieza tras un clic.</span>
+  </div>
+</main>
+
+<script>
+(() => {
+  // --------- Lienzo básico y DPR ----------
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
+  let W=0, H=0, DPR=1;
+  function resize(){
+    DPR = Math.max(1, Math.min(2.5, window.devicePixelRatio||1));
+    W = Math.max(320, window.innerWidth);
+    H = Math.max(480, window.innerHeight);
+    canvas.width = Math.floor(W*DPR);
+    canvas.height = Math.floor(H*DPR);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.imageSmoothingEnabled = false; // estilo nítido/pixel
+  }
+  window.addEventListener('resize', resize, {passive:true});
+  resize();
+
+  // --------- Paleta ----------
+  const PAL = {
+    sky: '#0b1326', hillDark:'#0d1b2e', hillLight:'#12213b',
+    star:'#ffffff', starDim:'#cfe7ff',
+    girlHair:'#3c2a3b', girlSkin:'#f4d7b9', glasses:'#79d8ff',
+    girlTop:'#ff6ea8', girlSkirt:'#6b5fcc', girlShoe:'#2b2b2b',
+    boyHair:'#2a2a2a', boySkin:'#f4d7b9', boyTop:'#4aa3ff', boyPant:'#2d4c7a', boyShoe:'#2b2b2b',
+    dogWhite:'#ffffff', dogShade:'#e7ecf7', nose:'#333333', blush:'#ff9bb3',
+    shadow:'#0a0f1c', shoot:'#fff9c4'
+  };
+
+  // --------- Cielo estrellado ----------
+  const STAR_COUNT = 320;
+  const stars = Array.from({length: STAR_COUNT}, () => ({
+    x: Math.random(), y: Math.random()*0.75, r: Math.random()*1.5 + 0.4,
+    a: Math.random()*0.7+0.3, tw: Math.random()*0.015 + 0.005, phase: Math.random()*Math.PI*2
+  }));
+
+  // --------- Estrella fugaz ----------
+  const shooting = { x:-1, y:0.15, vx:0.0, vy:0.0, active:false, life:0 };
+  function triggerShootingStar(){
+    shooting.x = Math.random()<0.5 ? -0.1 : 1.1;
+    shooting.y = Math.random()*0.25 + 0.05;
+    const dir = shooting.x < 0 ? 1 : -1;
+    shooting.vx = dir * (0.45 + Math.random()*0.25);
+    shooting.vy = 0.08 + Math.random()*0.06;
+    shooting.active = true; shooting.life = 0.9; // segundos
+  }
+
+  // --------- Sprites en matriz (pixel art) ----------
+  // Convención: '.' = transparente; letras = color clave en 'COL'
+  // Escala sugerida: 4 a 6
+  const COL = {
+    H:PAL.girlHair, S:PAL.girlSkin, G:PAL.glasses, T:PAL.girlTop, K:PAL.girlSkirt, B:PAL.girlShoe,
+    h:PAL.boyHair, s:PAL.boySkin, t:PAL.boyTop, p:PAL.boyPant, b:PAL.boyShoe,
+    W:PAL.dogWhite, w:PAL.dogShade, n:PAL.nose, U:PAL.blush
+  };
+
+  // Chica con lentes (16x20 aprox, de frente levemente hacia arriba)
+  const GIRL = [
+    "......HHHHHH......",
+    ".....HHHHHHHH.....",
+    "....HHHHHHHHHH....",
+    "...HHHHHHHHHHHH...",
+    "...HHSSGGGGSSHH...",
+    "..HSSSGGGGGSSSH..",
+    "..HSSGSSSSGSSH..B",
+    "..HSSGSSSSGSSH..B",
+    "...HHSSGGSSHH...B",
+    ".....HHSSHH......",
+    "......TTTT.......",
+    "......TTTT.......",
+    ".....TTTTTT......",
+    "......KKTK.......",
+    "......KKTK.......",
+    "......K..K.......",
+    ".....B....B......",
+  ];
+
+  // Chico (16x20), brazos hacia delante abrazando al perrito
+  const BOY = [
+    "......hhhhhh......",
+    ".....hhhhhhhh.....",
+    "....hhhhhhhhhh....",
+    "...hhhhhhhhhhhh...",
+    "...hhsssstsshh....",
+    "..hsssstttsssh..b.",
+    "..hssstssssssh..b.",
+    "...hhsssssshh...b.",
+    ".....hsssshh......",
+    "....tttttttt......",
+    "...tttttttttt.....",
+    "...tttppppttt.....",
+    "....tppppppt......",
+    ".....b....b.......",
+  ];
+
+  // Perrito blanco (12x10) centrado delante del chico
+  const DOG = [
+    "...WWWWWW....",
+    "..WWWWWWWW...",
+    ".WWWWwwWWWW..",
+    ".WWUWWWWUWw..",
+    ".WWWWnnWWWW..",
+    ".WWWWWWWWWW..",
+    "..WWW..WWW...",
+    "..WWW..WWW...",
+    "...WW..WW....",
+    "....W..W....."
+  ];
+
+  function drawSprite(sprite, x, y, scale){
+    for(let r=0; r<sprite.length; r++){
+      const row = sprite[r];
+      for(let c=0; c<row.length; c++){
+        const ch = row[c];
+        if(ch === '.') continue;
+        const color = COL[ch] || '#ff00ff';
+        ctx.fillStyle = color;
+        ctx.fillRect(Math.floor(x + c*scale), Math.floor(y + r*scale), scale, scale);
+      }
+    }
+  }
+
+  // --------- Música chiptune generativa (WebAudio) ----------
+  let AC = null, master = null, seqTimer = null;
+  const BTN_MUSIC = document.getElementById('toggle-music');
+
+  // Escala y patrón sencillo (modo pentatónico mayor)
+  const BPM = 84;
+  const BEAT_MS = 60000/BPM;
+  const BASE = 220; // A3
+  const PENTA = [0,2,4,7,9,12,14]; // semitonos
+  let step = 0;
+
+  function freq(semi){ return BASE * Math.pow(2, semi/12); }
+
+  function startMusic(){
+    if(!AC){
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      master = AC.createGain(); master.gain.value = 0.15; master.connect(AC.destination);
+    }
+    if(AC.state === 'suspended') AC.resume();
+
+    // Batería ligera (click hi-hat) + bajo + lead
+    if(seqTimer) return;
+    seqTimer = setInterval(()=> tick(), BEAT_MS);
+    BTN_MUSIC.textContent = '⏸️ Pausar música';
+  }
+  function stopMusic(){
+    if(seqTimer){ clearInterval(seqTimer); seqTimer = null; }
+    BTN_MUSIC.textContent = '🎵 Reproducir música';
+  }
+
+  function env(osc, dur=0.28, gain=0.25){
+    const g = AC.createGain(); g.gain.setValueAtTime(0, AC.currentTime);
+    g.gain.linearRampToValueAtTime(gain, AC.currentTime + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + dur);
+    osc.connect(g).connect(master);
+  }
+
+  function clickHat(){
+    const n = AC.createBufferSource();
+    const buf = AC.createBuffer(1, AC.sampleRate*0.05, AC.sampleRate);
+    const data = buf.getChannelData(0);
+    for(let i=0;i<data.length;i++){ data[i] = (Math.random()*2-1) * Math.exp(-i/800); }
+    n.buffer = buf;
+    const g = AC.createGain(); g.gain.value = 0.12;
+    n.connect(g).connect(master); n.start();
+  }
+
+  function note(type, f, dur=0.28, vol=0.25){
+    const o = AC.createOscillator(); o.type = type; o.frequency.value = f;
+    env(o, dur, vol); o.start(); o.stop(AC.currentTime + dur);
+  }
+
+  function tick(){
+    // Hi-hat
+    clickHat();
+    // Bajo cada negra
+    if(step % 4 === 0){
+      const deg = [0,0,7,9][Math.floor(step/4)%4]; // progresión simple
+      note('square', freq(deg-12), 0.28, 0.22);
+    }
+    // Lead melódico cada corchea
+    const phrase = [0,2,4,7,9,7,4,2, 0,2,4,7,4,2,0, -3]; // -3 = breve respiro (no suena)
+    const idx = step % phrase.length;
+    const d = phrase[idx];
+    if(d >= 0){ note('triangle', freq(PENTA[d%PENTA.length]+12), 0.22, 0.18); }
+
+    step++;
+  }
+
+  BTN_MUSIC.addEventListener('click', () => {
+    if(!AC || !seqTimer) startMusic(); else stopMusic();
+  });
+
+  // --------- Botones extra ----------
+  document.getElementById('shooting').addEventListener('click', triggerShootingStar);
+  document.getElementById('save').addEventListener('click', savePNG);
+
+  // --------- Dibujo del escenario ----------
+  function drawBackground(){
+    // degradado cielo
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, '#0b1630');
+    g.addColorStop(1, '#0a0f1c');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+
+    // estrellas (parpadeo sutil)
+    const now = performance.now();
+    ctx.save();
+    for(const s of stars){
+      const a = s.a * (0.7 + 0.3*Math.sin(s.phase + now * s.tw));
+      ctx.globalAlpha = Math.max(0, Math.min(1, a));
+      ctx.fillStyle = a > 0.6 ? PAL.star : PAL.starDim;
+      const x = Math.floor(s.x * W);
+      const y = Math.floor(s.y * H);
+      ctx.fillRect(x, y, 1, 1);
+      if(Math.random()<0.003){ ctx.fillRect(x+1,y,1,1); } // brillo ocasional
+    }
+    ctx.restore();
+
+    // colinas
+    ctx.fillStyle = PAL.hillLight;
+    hill(0.8, 30);
+    ctx.fillStyle = PAL.hillDark;
+    hill(0.9, 40);
+
+    function hill(heightRatio, rough){
+      const baseY = Math.floor(H*heightRatio);
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      for(let x=0;x<=W;x++){
+        const y = baseY + Math.sin(x/rough)*4 + Math.sin(x/17)*3;
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
+    }
+  }
+
+  function drawShootingStar(dt){
+    if(!shooting.active) return;
+    const len = Math.min(W,H)*0.12;
+    const x = shooting.x * W;
+    const y = shooting.y * H;
+    // cola
+    const g = ctx.createLinearGradient(x - len*shooting.vx, y - len*shooting.vy, x, y);
+    g.addColorStop(0, 'rgba(255,255,220,0)');
+    g.addColorStop(1, 'rgba(255,255,220,0.9)');
+    ctx.strokeStyle = g; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x - len*shooting.vx, y - len*shooting.vy);
+    ctx.lineTo(x, y); ctx.stroke();
+    // cabeza
+    ctx.fillStyle = PAL.shoot; ctx.globalAlpha = 1;
+    ctx.fillRect(Math.floor(x), Math.floor(y), 2, 2);
+
+    // actualizar
+    shooting.x += shooting.vx * dt;
+    shooting.y += shooting.vy * dt;
+    shooting.life -= dt;
+    if(shooting.life <= 0 || x < -50 || x > W+50 || y > H*0.9){
+      shooting.active = false;
+    }
+  }
+
+  function drawCharacters(){
+    const scale = Math.floor(Math.min(W,H) * 0.02); // tamaño del pixel
+    const baseY = Math.floor(H*0.82);
+
+    // posiciones
+    const girlX = Math.floor(W*0.45 - 10*scale);
+    const boyX  = Math.floor(W*0.55 - 8*scale);
+    const dogX  = Math.floor(W*0.56 - 6*scale);
+
+    // sombras
+    ctx.fillStyle = PAL.shadow; ctx.globalAlpha = 0.6;
+    ctx.fillRect(girlX, baseY + 6*scale, 10*scale, 2);
+    ctx.fillRect(boyX,  baseY + 6*scale, 10*scale, 2);
+    ctx.fillRect(dogX,  baseY + 6*scale,  8*scale, 2);
+    ctx.globalAlpha = 1;
+
+    // chica (un poco a la izquierda)
+    drawSprite(GIRL, girlX, baseY - GIRL.length*scale, scale);
+    // chico
+    drawSprite(BOY,  boyX,  baseY - BOY.length*scale, scale);
+    // perrito delante del chico
+    drawSprite(DOG,  dogX,  baseY - DOG.length*scale + scale*2, Math.max(1, Math.floor(scale*0.8)));
+  }
+
+  // --------- Guardar PNG ----------
+  function savePNG(){
+    // para exportar nítido, re-dibujamos en un offscreen 2x
+    const off = document.createElement('canvas');
+    const s = 2;
+    off.width = W * s; off.height = H * s;
+    const o = off.getContext('2d'); o.imageSmoothingEnabled = false;
+    // simple: escalar el canvas actual
+    o.drawImage(canvas, 0, 0, off.width, off.height);
+    const url = off.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url; a.download = 'amor_en_pixel.png';
+    a.click();
+  }
+
+  // --------- Bucle principal ----------
+  let last = performance.now();
+  function loop(now){
+    const dt = Math.min(0.05, (now - last)/1000); last = now;
+    drawBackground();
+    drawCharacters();
+    drawShootingStar(dt);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // Lanza una estrella fugaz cada cierto tiempo
+  setInterval(()=>{ if(!shooting.active && Math.random()<0.5) triggerShootingStar(); }, 3500);
+})();
+</script>
+</body>
+</html>
