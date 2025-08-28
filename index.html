@@ -130,8 +130,8 @@
   }
   
   // Crear pareja
-  function createCouple(breathe = 0) {
-    const w = 40, h = 32;
+  function createCouple(breathe = 0, heartBeat = 0) {
+    const w = 42, h = 34;
     const grid = Array.from({length: h}, () => Array(w).fill(null));
     
     function setPixel(x, y, width, height, color) {
@@ -157,86 +157,100 @@
     const shoe = '#2c2c2c';
     
     const breatheOffset = Math.round(Math.sin(breathe) * 0.8);
+    const heartOffset = Math.round(Math.sin(heartBeat * 3) * 0.3);
     
-    // Sombras en el suelo
-    setPixel(4, 30, 32, 1, 'rgba(0,0,0,.3)');
+    // Sombras románticas en el suelo
+    setPixel(4, 32, 34, 1, 'rgba(0,0,0,.2)');
     
     // === PERSONA 1 (IZQUIERDA) - HOMBRE ===
     
-    // Cabeza
+    // Cabeza (ligeramente inclinada hacia ella)
     setPixel(6, 6, 4, 4, skin1);
-    setPixel(7, 5, 2, 1, skin1); // frente
+    setPixel(7, 5, 2, 1, skin1);
     
     // Pelo
     setPixel(5, 4, 6, 3, hairDark);
     setPixel(6, 3, 4, 1, hairDark);
     
-    // Ojos y boca
+    // Ojos (mirándola con amor) y sonrisa
     setPixel(6, 6, 1, 1, '#000');
     setPixel(9, 6, 1, 1, '#000');
-    setPixel(7, 8, 2, 1, '#000');
+    setPixel(7, 8, 2, 1, '#ff6b9d'); // sonrisa rosa
     
     // Cuerpo - Hoodie azul
     setPixel(4, 10 + breatheOffset, 8, 12, hoodie1);
-    setPixel(4, 14 + breatheOffset, 8, 1, hoodie1Dark); // sombra
-    setPixel(4, 18 + breatheOffset, 8, 2, hoodie1Dark); // bolsillo
+    setPixel(4, 14 + breatheOffset, 8, 1, hoodie1Dark);
+    setPixel(4, 18 + breatheOffset, 8, 2, hoodie1Dark);
     
-    // Brazos
-    setPixel(2, 12 + breatheOffset, 2, 6, hoodie1); // brazo izq
-    setPixel(12, 12 + breatheOffset, 2, 4, hoodie1); // brazo der (más corto, abraza)
+    // Brazos (abrazo protector)
+    setPixel(2, 12 + breatheOffset, 2, 6, hoodie1);
+    setPixel(12, 12 + breatheOffset, 3, 4, hoodie1); // brazo que la abraza más fuerte
     
     // Pantalón
-    setPixel(5, 22 + breatheOffset, 6, 6, jeans);
-    setPixel(5, 24 + breatheOffset, 6, 1, '#34495e'); // costura
+    setPixel(5, 22 + breatheOffset, 6, 8, jeans);
+    setPixel(5, 24 + breatheOffset, 6, 1, '#34495e');
     
     // Zapatos
-    setPixel(4, 28 + breatheOffset, 3, 2, shoe);
-    setPixel(9, 28 + breatheOffset, 3, 2, shoe);
+    setPixel(4, 30 + breatheOffset, 3, 2, shoe);
+    setPixel(9, 30 + breatheOffset, 3, 2, shoe);
     
     // === PERSONA 2 (DERECHA) - MUJER ===
     
-    // Cabeza
-    setPixel(18, 7, 4, 4, skin2);
-    setPixel(19, 6, 2, 1, skin2); // frente
+    // Cabeza (recostada suavemente en su hombro)
+    setPixel(17, 8 + heartOffset, 4, 4, skin2);
+    setPixel(18, 7 + heartOffset, 2, 1, skin2);
     
-    // Pelo largo
-    setPixel(16, 5, 8, 4, hairBrown);
-    setPixel(17, 3, 6, 2, hairBrown);
-    setPixel(15, 9, 2, 3, hairBrown); // pelo que cae
-    setPixel(23, 9, 2, 3, hairBrown);
+    // Pelo largo y romántico
+    setPixel(15, 6 + heartOffset, 8, 4, hairBrown);
+    setPixel(16, 4 + heartOffset, 6, 2, hairBrown);
+    setPixel(14, 10 + heartOffset, 2, 4, hairBrown); // pelo que fluye
+    setPixel(23, 10 + heartOffset, 2, 4, hairBrown);
     
-    // Ojos y boca
-    setPixel(18, 7, 1, 1, '#000');
-    setPixel(21, 7, 1, 1, '#000');
-    setPixel(19, 9, 2, 1, '#ff69b4'); // sonrisa rosada
+    // Ojos cerrados (feliz) y sonrisa dulce
+    setPixel(18, 8 + heartOffset, 1, 1, '#ff69b4'); // ojo cerrado rosa
+    setPixel(21, 8 + heartOffset, 1, 1, '#ff69b4');
+    setPixel(19, 10 + heartOffset, 2, 1, '#ff1493'); // sonrisa más dulce
     
-    // Cuerpo - Suéter rojo
-    setPixel(16, 11 + breatheOffset, 8, 10, sweater2);
-    setPixel(16, 15 + breatheOffset, 8, 1, sweater2Dark); // sombra
+    // Cuerpo - Suéter rojo acurrucado
+    setPixel(15, 12 + breatheOffset + heartOffset, 9, 10, sweater2);
+    setPixel(15, 16 + breatheOffset + heartOffset, 9, 1, sweater2Dark);
     
-    // Brazos (ella abraza de vuelta)
-    setPixel(14, 13 + breatheOffset, 2, 4, sweater2); // brazo izq abraza
-    setPixel(24, 13 + breatheOffset, 2, 5, sweater2); // brazo der
+    // Brazos (abrazo cariñoso)
+    setPixel(13, 14 + breatheOffset, 2, 4, sweater2); // abraza su cintura
+    setPixel(24, 14 + breatheOffset, 2, 5, sweater2);
     
     // Falda
-    setPixel(15, 21 + breatheOffset, 10, 5, skirt);
-    setPixel(15, 23 + breatheOffset, 10, 1, '#e67e22'); // sombra falda
+    setPixel(14, 22 + breatheOffset, 11, 6, skirt);
+    setPixel(14, 24 + breatheOffset, 11, 1, '#e67e22');
     
     // Piernas
-    setPixel(17, 26 + breatheOffset, 2, 2, skin2);
-    setPixel(21, 26 + breatheOffset, 2, 2, skin2);
+    setPixel(16, 28 + breatheOffset, 2, 2, skin2);
+    setPixel(22, 28 + breatheOffset, 2, 2, skin2);
     
     // Zapatos
-    setPixel(16, 28 + breatheOffset, 3, 2, '#8e44ad'); // zapatos morados
-    setPixel(21, 28 + breatheOffset, 3, 2, '#8e44ad');
+    setPixel(15, 30 + breatheOffset, 3, 2, '#8e44ad);
+    setPixel(22, 30 + breatheOffset, 3, 2, '#8e44ad');
     
-    // === DETALLES DE ABRAZO ===
+    // === DETALLES ROMÁNTICOS ===
     
-    // Brazo de él alrededor de ella
-    setPixel(14, 14 + breatheOffset, 2, 2, hoodie1);
+    // Abrazo más íntimo
+    setPixel(13, 15 + breatheOffset, 3, 3, hoodie1); // su brazo alrededor de ella
+    setPixel(11, 12 + breatheOffset, 3, 2, sweater2); // ella se acurruca en él
     
-    // Brazo de ella en su hombro
-    setPixel(12, 11 + breatheOffset, 2, 2, sweater2);
+    // Corazoncitos flotantes (aparecen y desaparecen)
+    if(Math.sin(heartBeat * 2) > 0.3) {
+      setPixel(25, 6, 1, 1, '#ff1493');
+      setPixel(26, 5, 1, 1, '#ff1493');
+      setPixel(27, 6, 1, 1, '#ff1493');
+      setPixel(26, 7, 1, 1, '#ff1493');
+    }
+    
+    if(Math.sin(heartBeat * 2.3) > 0.5) {
+      setPixel(2, 8, 1, 1, '#ff69b4');
+      setPixel(3, 7, 1, 1, '#ff69b4');
+      setPixel(4, 8, 1, 1, '#ff69b4');
+      setPixel(3, 9, 1, 1, '#ff69b4');
+    }
     
     return grid;
   }
@@ -350,23 +364,57 @@
     ctx.rect(x, y, w, h);
     ctx.clip();
     
-    // Cielo degradado
+    // Cielo degradado más romántico
     const skyGradient = ctx.createLinearGradient(0, y, 0, y + h);
-    skyGradient.addColorStop(0, '#09133a');
+    skyGradient.addColorStop(0, '#1a0933'); // Púrpura romántico
+    skyGradient.addColorStop(0.3, '#09133a');
     skyGradient.addColorStop(1, '#030815');
     ctx.fillStyle = skyGradient;
     ctx.fillRect(x, y, w, h);
     
-    // Estrellas titilantes
+    // Estrellas titilantes más románticas
     for(const star of stars) {
-      const twinkle = 0.6 + 0.4 * Math.sin(time / 900 + star.phase);
+      const twinkle = 0.4 + 0.6 * Math.sin(time / 700 + star.phase);
       ctx.globalAlpha = star.alpha * twinkle;
-      ctx.fillStyle = '#fff';
+      
+      // Algunas estrellas son rosadas para ambiente romántico
+      if(star.r > 1.5) {
+        ctx.fillStyle = '#ffb3d9';
+      } else {
+        ctx.fillStyle = '#fff';
+      }
+      
       ctx.beginPath();
       ctx.arc(x + star.x * w, y + star.y * h, star.r, 0, Math.PI * 2);
       ctx.fill();
+      
+      // Brillo extra para estrellas grandes
+      if(star.r > 1.3) {
+        ctx.globalAlpha = star.alpha * twinkle * 0.3;
+        ctx.beginPath();
+        ctx.arc(x + star.x * w, y + star.y * h, star.r * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
     ctx.globalAlpha = 1;
+    
+    // Luna romántica
+    const moonX = x + w * 0.8;
+    const moonY = y + h * 0.15;
+    const moonGrad = ctx.createRadialGradient(moonX, moonY, 0, moonX, moonY, 25);
+    moonGrad.addColorStop(0, 'rgba(255,240,200,0.9)');
+    moonGrad.addColorStop(0.7, 'rgba(255,240,200,0.4)');
+    moonGrad.addColorStop(1, 'rgba(255,240,200,0)');
+    ctx.fillStyle = moonGrad;
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, 25, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Centro de la luna
+    ctx.fillStyle = '#fff3cc';
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, 12, 0, Math.PI * 2);
+    ctx.fill();
     
     // Capas de edificios
     cityLayers.forEach(layer => {
@@ -377,52 +425,62 @@
         
         ctx.fillStyle = layer.color;
         ctx.fillRect(bx, by, building.w, building.h);
+        
+        // Ventanas románticas con luz cálida
+        if(Math.random() > 0.7) {
+          const windowCount = Math.floor(building.w / (8 * PX));
+          for(let i = 0; i < windowCount; i++) {
+            if(Math.random() > 0.6) {
+              ctx.fillStyle = '#ffeb99';
+              ctx.fillRect(bx + i * 8 * PX + 2 * PX, by + 4 * PX, 3 * PX, 3 * PX);
+            }
+          }
+        }
       }
     });
     
-    // Cometa
+    // Cometa más romántico
     if(comet.active) {
-      // Añadir posición al trail
       comet.trail.push({x: comet.x, y: comet.y});
-      if(comet.trail.length > 14) comet.trail.shift();
+      if(comet.trail.length > 20) comet.trail.shift();
       
-      // Dibujar trail
+      // Trail más largo y romántico
       for(let i = 0; i < comet.trail.length; i++) {
         const pos = comet.trail[i];
-        ctx.globalAlpha = i / comet.trail.length * 0.7;
+        ctx.globalAlpha = i / comet.trail.length * 0.8;
         
-        const rad = 4 * PX;
-        const grad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, rad * 3);
-        grad.addColorStop(0, 'rgba(255,255,210,1)');
+        const rad = 3 * PX;
+        const grad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, rad * 4);
+        grad.addColorStop(0, 'rgba(255,192,203,1)'); // Rosa romántico
+        grad.addColorStop(0.5, 'rgba(255,255,210,0.8)');
         grad.addColorStop(1, 'rgba(255,255,210,0)');
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(pos.x, pos.y, rad * 3, 0, Math.PI * 2);
+        ctx.arc(pos.x, pos.y, rad * 4, 0, Math.PI * 2);
         ctx.fill();
       }
       
       ctx.globalAlpha = 1;
       
-      // Cometa principal
-      const rad = 4 * PX;
+      // Cometa principal con colores románticos
+      const rad = 5 * PX;
       const grad = ctx.createRadialGradient(comet.x, comet.y, 0, comet.x, comet.y, rad * 3);
-      grad.addColorStop(0, 'rgba(255,255,210,1)');
+      grad.addColorStop(0, 'rgba(255,192,203,1)');
+      grad.addColorStop(0.3, 'rgba(255,255,210,0.9)');
       grad.addColorStop(1, 'rgba(255,255,210,0)');
       ctx.fillStyle = grad;
       ctx.beginPath();
       ctx.arc(comet.x, comet.y, rad * 3, 0, Math.PI * 2);
       ctx.fill();
       
-      // Mover cometa
-      comet.x -= comet.speed;
-      comet.y += comet.speed * 0.18;
+      comet.x -= comet.speed * 0.8; // Más lento y elegante
+      comet.y += comet.speed * 0.15;
       
-      // Verificar si salió de la ventana
       if(comet.x < x - 100 || comet.y > y + h + 60) {
         comet.active = false;
         comet.trail = [];
       }
-    } else if(Math.random() < 0.0025) {
+    } else if(Math.random() < 0.002) { // Menos frecuente para ser más especial
       triggerComet();
     }
     
@@ -442,11 +500,11 @@
     drawCityAndSky(time);
     
     // Dibujar pareja
-    const couple = createCouple((time / 1000) % (2 * Math.PI));
-    const coupleW = 80 * PX; // Ajustado para el nuevo ancho
-    const coupleH = 64 * PX;
+    const couple = createCouple((time / 1000) % (2 * Math.PI), (time / 800) % (2 * Math.PI));
+    const coupleW = 84 * PX; // Ajustado para el nuevo ancho más romántico
+    const coupleH = 68 * PX;
     const coupleX = windowFrame.x + windowFrame.w / 2 - coupleW / 2;
-    const coupleY = windowFrame.y + windowFrame.h - coupleH / 2 + 10 * PX;
+    const coupleY = windowFrame.y + windowFrame.h - coupleH / 2 + 8 * PX;
     
     // Animar perro (ANTES para que quede detrás)
     if(time - lastDogSwitch > 450) {
