@@ -2,25 +2,26 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cuarto Nocturno – Pixel Art Animado</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Noche Pixel – Fullscreen</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <canvas id="scene"></canvas>
 
-  <!-- Spotify (tu playlist) -->
+  <!-- Spotify -->
   <div class="spotify">
-    <iframe style="border:0;width:300px;height:380px"
+    <iframe
       src="https://open.spotify.com/embed/playlist/5I9ZvE52QlLdc8SdU1WCVP"
-      allow="encrypted-media"></iframe>
+      allow="encrypted-media"
+      loading="lazy"
+      title="Spotify playlist"
+    ></iframe>
   </div>
 
-  <!-- Si algo falla, se verá arriba -->
+  <!-- Error visible si algo falla -->
   <div id="err" class="err" hidden></div>
 
   <script src="script.js"></script>
 </body>
 </html>
-
-
